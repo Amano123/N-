@@ -1,0 +1,15 @@
+version: "3.7"
+
+services:
+  python:
+      build:
+        context: ./python
+        dockerfile: Dockerfile
+        args: 
+          USER_NAME: $USER_NAME
+          USER_ID: $USER_ID
+          GROUP_ID: $GROUP_ID
+      container_name: python
+      volumes:
+          - ./src:/home/$USER_NAME/workspace
+      tty: true
