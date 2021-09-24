@@ -1,0 +1,57 @@
+FROM python:3.9.7
+
+LABEL maintainer="yoyo"
+
+ARG USER_NAME
+ARG USER_ID
+ARG GROUP_ID
+
+# サーバーを日本に変更
+# 多分早くなる
+RUN sed -i 's@archive.ubuntu.com@ftp.jaist.ac.jp/pub/Linux@g' /etc/apt/sources.list
+
+RUN apt-get update \
+&&  apt-get install -y --no-install-recommends \
+                sudo \
+                zsh \
+                # vim \
+                neovim \
+                git \
+                make \
+                cmake \
+                curl \
+                wget \
+                xz-utils \
+                # あれば良し
+                # nano \
+                file \
+                ## network
+                net-tools \
+                locales \                
+                # make user
+                gosu
+
+# localizing into Japanese
+RUN locale-gen ja_JP.UTF-8 
+ENV LANG ja_JP.UTF-8
+ENV LC_CTYPE ja_JP.UTF-8
+RUN localedef -f UTF-8 -i ja_JP ja_JP.utf8
+
+RUN pip install -U ipykernel rdflib tqdm
+
+# シンボリックリンクを変更しないとvscode上でipykernelがうまく動かない
+RUN ln -sf /usr/local/bin/python3 /usr/bin/python3
+
+# make user
+RUN set -x \
+&&  echo "Starting with UID : ${USER_ID}, GID: ${GROUP_ID}" \
+&&  adduser --disabled-password --gecos "" "${USER_NAME}" \
+&&  echo "${USER_NAME}:${USER_NAME}" | chpasswd \
+&&  echo "%${USER_NAME}    ALL=(ALL)   NOPASSWD:    ALL" >> /etc/sudoers.d/${USER_NAME} \
+&&  chmod 0440 /etc/sudoers.d/${USER_NAME} \
+&&  usermod -u ${USER_ID} ${USER_NAME} \
+&&  groupmod -g ${GROUP_ID} ${USER_NAME} 
+
+# user change : root -> make user 
+USER ${USER_NAME}
+WORKDIR /home/${USER_NAME}/workspace
